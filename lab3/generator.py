@@ -1,6 +1,6 @@
 import random
 
-size = 3000
+size = 100
 print(size)
 
 for _ in range(0, size):
