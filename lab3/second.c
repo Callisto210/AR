@@ -20,7 +20,7 @@ struct star {
 int main(int argc, char** argv) {
 	int rank, size;
 	int next, prev;
-	unsigned long stars, i, j, tmp, other_stars_n;
+	unsigned long stars, i, j, tmp, other_stars_n, problem_size;
 	struct star *universe, *other_stars, *other_stars_second, *other_stars_tmp;
 	double d, time, tx, ty, tz;
 	int cpu, first_cpu, last_cpu;
@@ -36,7 +36,8 @@ int main(int argc, char** argv) {
 		fscanf(data, "%zu", &stars);
 		universe = malloc(((stars/size) + ((0 < stars % size) ? 1 : 0)) * sizeof(*universe));
 
-		printf("Stars in file %ld\n", stars);
+		//printf("Stars in file %ld\n", stars);
+		problem_size = stars;
 
 		/* Propagate number of stars to processor */
 		for (j = 1; j < size; j++) {
@@ -75,7 +76,7 @@ int main(int argc, char** argv) {
 	} else {
 		/* Receive number of stars */
 		MPI_Recv(&stars, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		printf("CPU %d received %ld stars\n", rank, stars);
+		//printf("CPU %d received %ld stars\n", rank, stars);
 		universe = malloc(stars * sizeof(*universe));
 
 		/* Receive information about stars */
@@ -92,7 +93,7 @@ int main(int argc, char** argv) {
 	}
 
 	time = 0.0;
-#if 1
+#if 0
 	for (int cpu = 0; cpu < size; cpu++) {
 		MPI_Barrier(MPI_COMM_WORLD);
 		if (cpu != rank)
@@ -134,8 +135,8 @@ int main(int argc, char** argv) {
 					MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 			/* Pass/receive stars to/from neighbour */
-			MPI_Sendrecv(	other_stars, tmp * sizeof(*other_stars), MPI_UNSIGNED_CHAR, next, 0,
-					other_stars_second, other_stars_n * sizeof(*other_stars), MPI_UNSIGNED_CHAR, prev, 0,
+			MPI_Sendrecv(	other_stars, tmp * sizeof(*other_stars), MPI_UNSIGNED_CHAR, next, 2,
+					other_stars_second, other_stars_n * sizeof(*other_stars), MPI_UNSIGNED_CHAR, prev, 2,
 					MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
 			other_stars_tmp = other_stars;
@@ -189,9 +190,10 @@ int main(int argc, char** argv) {
 		}
 
 		/* Send stars to owner */
-		MPI_Sendrecv(	other_stars, other_stars_n * sizeof(*other_stars), MPI_UNSIGNED_CHAR, first_cpu, 0,
-				other_stars_second, stars * sizeof(*other_stars), MPI_UNSIGNED_CHAR, last_cpu, 0,
+		MPI_Sendrecv(	other_stars, other_stars_n * sizeof(*other_stars), MPI_UNSIGNED_CHAR, first_cpu, 3,
+				other_stars_second, stars * sizeof(*other_stars), MPI_UNSIGNED_CHAR, last_cpu, 3,
 				MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
 		for (int i = 0; i < stars; i++) {
 			universe[i].ax += other_stars_second[i].ax;
 			universe[i].ay += other_stars_second[i].ay;
@@ -201,6 +203,7 @@ int main(int argc, char** argv) {
 		time += MPI_Wtime();
 	}
 
+#if 0
 	cpu = 1;
 	for (int l = 0; l < size; l++) {
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -212,6 +215,9 @@ int main(int argc, char** argv) {
 		}
 		cpu = (cpu + 1 < size) ? cpu + 1 : 0;
 	}
+#endif
+        if (rank == 0)
+                printf("%ld, %d, %.10f\n", problem_size, size, time/(double)NUMBER_OF_TESTS);
 
 	MPI_Finalize();
 	return (0);

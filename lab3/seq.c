@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 #define G 6.6740831e-11
 
@@ -18,6 +19,7 @@ int main() {
 	size_t stars, i, j;
 	struct star* universe;
 	double d;
+	clock_t time;
 
 	scanf("%zu", &stars);
 	universe = malloc(stars * sizeof(*universe));
@@ -34,6 +36,7 @@ int main() {
 		universe[i].az = 0.0;
 	}
 
+	time = -clock();
 	for (i = 0; i < stars; i++)
 		for (j = 0; j < stars; j++)
 			if (i != j) {
@@ -46,9 +49,15 @@ int main() {
 				universe[i].az += G*universe[j].m*(universe[j].z - universe[i].z)/d;
 			}
 
+	time += clock();
+#if 0
 	for (i = 0; i < stars; i++) {
 		printf("%f, %f, %f\n", universe[i].ax, universe[i].ay, universe[i].az);
 	}
+#endif
+
+	printf("%ld, 1, %.10f\n", stars, (double)time/(double)CLOCKS_PER_SEC);	
+
 	return (0);
 }
 

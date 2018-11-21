@@ -5,7 +5,7 @@
 #include <string.h>
 
 #define G 6.6740831e-11
-#define NUMBER_OF_TESTS (1)
+#define NUMBER_OF_TESTS (10)
 
 struct star {
 	long long x;
@@ -20,7 +20,7 @@ struct star {
 int main(int argc, char** argv) {
 	int rank, size;
 	int next, prev;
-	unsigned long stars, i, j, tmp, other_stars_n;
+	unsigned long stars, i, j, tmp, other_stars_n, problem_size;
 	struct star *universe, *other_stars, *other_stars_second, *other_stars_tmp;
 	double d, time;
 	int cpu;
@@ -36,7 +36,8 @@ int main(int argc, char** argv) {
 		fscanf(data, "%zu", &stars);
 		universe = malloc(((stars/size) + ((0 < stars % size) ? 1 : 0)) * sizeof(*universe));
 
-		printf("Stars in file %ld\n", stars);
+		//printf("Stars in file %ld\n", stars);
+		problem_size = stars;
 
 		/* Propagate number of stars to processor */
 		for (j = 1; j < size; j++) {
@@ -75,7 +76,7 @@ int main(int argc, char** argv) {
 	} else {
 		/* Receive number of stars */
 		MPI_Recv(&stars, 1, MPI_UNSIGNED_LONG, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-		printf("CPU %d received %ld stars\n", rank, stars);
+		//printf("CPU %d received %ld stars\n", rank, stars);
 		universe = malloc(stars * sizeof(*universe));
 
 		/* Receive information about stars */
@@ -92,7 +93,7 @@ int main(int argc, char** argv) {
 	}
 
 	time = 0.0;
-#if 1
+#if 0
 	for (int cpu = 0; cpu < size; cpu++) {
 		MPI_Barrier(MPI_COMM_WORLD);
 		if (cpu != rank)
@@ -159,7 +160,7 @@ int main(int argc, char** argv) {
 		}
 		time += MPI_Wtime();
 	}
-
+#if 0
 	cpu = 1;
 	for (int l = 0; l < size; l++) {
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -171,6 +172,9 @@ int main(int argc, char** argv) {
 		}
 		cpu = (cpu + 1 < size) ? cpu + 1 : 0;
 	}
+#endif
+        if (rank == 0)
+                printf("%ld, %d, %.10f\n", problem_size, size, time/(double)NUMBER_OF_TESTS);
 
 	MPI_Finalize();
 	return (0);
