@@ -11,7 +11,15 @@ int cmpfunc(const void * a, const void * b) {
 void merge_lesser(int *result, int *a, int *b, size_t size) {
 	size_t i, j=0, k=0;
 
-	for (i=0; i < size; i++) {
+	for (i=0; i < size*2; i++) {
+		if (j >= size) {
+			result[i] = b[k++];
+			continue;
+		}
+		if (k >= size) {
+			result[i] = a[j++];
+			continue;
+		}
 		if (a[j] < b[k])
 			result[i] = a[j++];
 		else
@@ -22,7 +30,15 @@ void merge_lesser(int *result, int *a, int *b, size_t size) {
 void merge_greater(int *result, int *a, int *b, size_t size) {
 	int i, j=size-1, k=size-1;
 
-	for (i=size-1; i >= 0; i--) {
+	for (i=0; i < 2*size; i++) {
+		if (j < 0) {
+			result[i] = b[k--];
+			continue;
+		}
+		if (k < 0) {
+			result[i] = a[j--];
+			continue;
+		}
 		if (a[j] > b[k])
 			result[i] = a[j--];
 		else
@@ -62,9 +78,9 @@ int main(int argc, char** argv) {
 
 	sub_array_size = n/world_size;
 
-	sub_array = malloc(sub_array_size * sizeof(int));
+	sub_array = malloc(2 * sub_array_size * sizeof(int));
 	foreign_sub_array = malloc(sub_array_size * sizeof(int));
-	result_array = malloc(sub_array_size * sizeof(int));
+	result_array = malloc(2 * sub_array_size * sizeof(int));
 
 	/* Send part of array to processes */
 	MPI_Scatter(array, sub_array_size, MPI_INT, sub_array, sub_array_size, MPI_INT, 0, MPI_COMM_WORLD);
@@ -99,14 +115,20 @@ int main(int argc, char** argv) {
 						foreign_sub_array, sub_array_size, MPI_INT, partner, 0,
 						MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 				printf("CPU %d to %d\n", world_rank, partner);
-				if (world_rank && two_to_power[i])
+				if ((world_rank && two_to_power[i]) == 0)
 					merge_lesser(result_array, sub_array, foreign_sub_array, sub_array_size);
 				else
 					merge_greater(result_array, sub_array, foreign_sub_array, sub_array_size);
 
-				tmp = sub_array;
-				sub_array = result_array;
-				result_array = tmp;
+				if ((world_rank && two_to_power[m]) == 0) {
+					tmp = sub_array;
+					sub_array = result_array;
+					result_array = tmp;
+				} else {
+					tmp = sub_array;
+					sub_array = result_array;
+					result_array = tmp;
+				}
 			}
 		}
 	}
